@@ -8,6 +8,7 @@ import os
 import time
 from collections import deque
 import random
+from threading import Thread
 
 logger.basicConfig(level=logger.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -61,7 +62,7 @@ class Wiki_Crawler:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
         
-        # Random delay between requests (1-3 seconds)
+        # Request Delay
         time.sleep(random.uniform(1, 3))
         
         try:
@@ -176,10 +177,53 @@ class Wiki_Crawler:
         finally:
             self.save_progress()
             logger.info(f"Crawling completed. Total pages processed: {self.pages_processed}")
-
+            
 if __name__ == "__main__":
-    start_url = "https://en.wikipedia.org/wiki/Python_(programming_language)"
-    output_directory = "wiki_pages"
-    
-    crawler = Wiki_Crawler(start_url, output_directory, max_pages=10000)
-    crawler.crawl()
+    # Define crawler configurations
+    crawler_configs = [
+        {
+            "start_url": "https://en.wikipedia.org/wiki/Lists_of_actors",
+            "directory": "wiki_pages/actors",
+            "max_pages": 1000
+        },
+        {
+            "start_url": "https://en.wikipedia.org/wiki/Lists_of_musicians",
+            "directory": "wiki_pages/musicians",
+            "max_pages": 1000
+        },
+        {
+            "start_url": "https://en.wikipedia.org/wiki/Lists_of_writers",
+            "directory": "wiki_pages/writers",
+            "max_pages": 1000
+        },
+        {
+            "start_url": "https://en.wikipedia.org/wiki/Lists_of_artists",
+            "directory": "wiki_pages/artists",
+            "max_pages": 1000
+        }
+    ]
+
+    def run_crawler(config):
+        """Function to run a single crawler instance"""
+        logger.info(f"Starting crawler for: {config['start_url']}")
+        crawler = Wiki_Crawler(
+            start_url=config['start_url'],
+            directory=config['directory'],
+            max_pages=config['max_pages']
+        )
+        crawler.crawl()
+        logger.info(f"Completed crawling: {config['start_url']}")
+
+    # Create and start threads for each crawler
+    threads = []
+    for config in crawler_configs:
+        thread = Thread(target=run_crawler, args=(config,))
+        thread.start()
+        threads.append(thread)
+        logger.info(f"Started thread for: {config['start_url']}")
+
+    # Wait for all crawlers to complete
+    for thread in threads:
+        thread.join()
+
+    logger.info("All crawlers completed")
