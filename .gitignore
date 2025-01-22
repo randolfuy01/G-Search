@@ -1,2 +1,5 @@
 wiki_pages
+.DS_store
 *.json
+*.zip
+*.env
